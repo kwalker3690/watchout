@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html>
+ <head>
+   <title>Chernoff Smileys</title>
+   <script type="text/javascript" src="d3.js"></script>
+
+   <style type="text/css">
+
+   </style>
+ </head>
+ <body>
+
+     <p>Click a Smiley<p>
+
+   <script type="text/javascript">
+
+
+    var drag = d3.behavior.drag()
+        .on("drag", function(d,i) {
+            d.x += d3.event.dx
+            d.y += d3.event.dy
+            d3.select(this).attr("transform", function(d,i){
+                return "translate(" + [ d.x,d.y ] + ")"
+            })
+        });
+
+
+    function face_factory(classname, data, x, y, r)
+    {
+        //data format
+        //{ "x": 0 - 1 , "y": 0 -1, "z": 0-1 }
+        //color could be made a parameter
+        //var arc = d3.svg.arc().outerRadius(r)
+        //var donut = d3.layout.pie();
+
+        var face = d3.select("#charts")
+            .append("svg:g")
+                //.data([data.sort(d3.descending)])
+                //.data([data])
+                .data([ {"x":x, "y":y} ])
+                .attr("class", classname)
+                .attr("transform", "translate(" + x + "," + y + ")")
+                .call(drag);
+
+
+        console.log("make head");
+        var head_color = d3.scale.linear()
+            .domain([0, 1])
+            .interpolate(d3.interpolateRgb)
+            .range(["#ff0000", "#0000ff"]);
+
+        var head = face.append("svg:circle")
+                .attr("class", "head")
+                .attr("fill", function(d){ return head_color(data.x); })
+                .attr("fill-opacity", .8)
+                .attr("stroke", "#000")
+                .attr("stroke-width", 4)
+                .attr("r", r);
+
+        console.log("make mouth");
+
+    }
+
+    var w = 700;
+    var h = 400;
+
+    //setup svg canvas
+    d3.select("body")
+        .append("svg:svg")
+            .attr("width", w)
+            .attr("height", h)
+            .attr("id", "charts")
+            //.on("click", clickypie)
+            .append("svg:rect")
+                .attr("width", "100%")
+                .attr("height", "100%")
+                .attr("stroke", "#000")
+                .attr("stroke-width", 3)
+                .attr("fill", "none")
+
+    //r = 100;
+    setInterval(function()
+    // for(i = 0; i < 20; i++)
+    {
+        var r = 20 + Math.random() * 50;
+        var data = { "x":Math.random(), "y":Math.random(), "z":Math.random(), "w":Math.random() };
+        x = Math.random() * w
+        y = Math.random() * h
+        face_factory("face", data, x, y, r);
+    }, 100)
+
+
+   </script>
+ </body>
+</html>
