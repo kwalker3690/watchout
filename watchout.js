@@ -1,11 +1,30 @@
 var game = {
 	'height' : 600,
-	'width' : 900
+	'width' : 900,
+	'score' : 0,
+	'collisions' : 0,
+	'bestScore': 0,
 }
 
 var gameContainer = d3.select('.game-container');
 gameContainer.append('svg').attr('class', 'game-board');
 var gameBoard = d3.select('.game-board');
+
+var updateScore = function(){
+	d3.selectAll('.current span').text(game.score.toString())
+}
+
+var increaseScore = function(){
+	game.score++
+	updateScore();
+}
+
+var updateBestScore = function(){
+	if(game.bestScore < game.score){
+		game.bestScore = game.score
+	}
+	d3.selectAll('.high span').text(game.bestScore.toString())
+}
 
 
 /*////////////////////////////////////*/
@@ -28,35 +47,31 @@ var controlMaker = function(x,y){
 		  	.attr('cx', function(target){return target.x})
 		  	.attr('cy', function(target){return target.y})
 			.call(drag);
-		}
-controlMaker(450, 300)
+}
 
 
 /*////////////////////////////////////*/
 /*////////////// TARGET //////////////*/
 /*////////////////////////////////////*/
 
-var renderTargets = function(){
+var renderTargets = function(data){
+	var targetPath = "m215,159l21,27l28,-30l-4,40l33,4l-40,19l0,43l-16,-38l-38,0l29,-19l-13,-46z";
+	var target = gameBoard.selectAll('.target')
 
-	var updateTargets = function(data){
-		var target = gameBoard.selectAll('.target')
 
-		.data(data, function(d){
-			return d.x;
-		})
+	.data(data, function(d){
+		return d.id;
+	})
 
-		var targetEnter = target.enter()
-		targetEnter.append('circle')
-			  .attr('class', 'target')
-			  .attr('r', 10)
-			  .attr('fill', 'green')
-			  .attr('cx', function(target){return target.x})
-			  .attr('cy', function(target){return target.y})
+	var targetEnter = target.enter()
+	targetEnter.append('circle')
+		  .attr('class', 'target')
+		  .attr('r', 10)
+		  .attr('fill', 'green')
+		  .attr('cx', function(target){return target.x})
+		  .attr('cy', function(target){return target.y})
 
-		target.exit().remove()
-
-		return targetEnter;
-	}
+	target.exit().remove()
 
 	var moveFunc = function(endData) {
 		var target = d3.select(this);
@@ -73,23 +88,16 @@ var renderTargets = function(){
 		return function(t){
 			checkCollision(target, collisionReset);
 			var targetNextPos = {
-				'x' : (startPos.x + (endPos.x - startPos.x))*t,
-				'y' : (startPos.y + (endPos.y - startPos.y))*t
+				'x' : (startPos.x + (endPos.x - startPos.x)*t),
+				'y' : (startPos.y + (endPos.y - startPos.y)*t)
 			}
 			return target.attr('cx', targetNextPos.x).attr('cy', targetNextPos.y)
 		}
 	}
 
 	return target.transition()
-			  	 .duration(2000)
+			  	 .duration(1000)
 			  	 .tween('custom', moveFunc)
-}
-
-var newDataPosition = function(){
-	var xPos = Math.random()*game.width;
-	var yPos = Math.random()*game.height;
-	var data = {'x':xPos, 'y':yPos}
-	return data
 }
 
 /*////////////////////////////////////*/
@@ -98,57 +106,44 @@ var newDataPosition = function(){
 
 var checkCollision = function(target, collidedCallback){
 	var control = gameBoard.selectAll('.control');
-	debugger;
-	var radiusSum = parseFloat(target.r) + parseFloat(control.attr('r'));
-	var xDiff = parseFloat(target.x - control.attr('cx'));
-	var yDiff = parseFloat(target.y - control.attr('cy'))
-	var separation = Math.sqrt(Math.pow(xDiff, 2) + Math.pow(yDiff, 2))
+		var radiusSum = parseFloat(target.attr('r')) + parseFloat(control.attr('r'));
+		var xDiff = parseFloat(target.attr('cx') - control.attr('cx'));
+		var yDiff = parseFloat(target.attr('cy') - control.attr('cy'))
+		var separation = Math.sqrt(Math.pow(xDiff, 2) + Math.pow(yDiff, 2))
+		if( separation < radiusSum){
+			collidedCallback(target)
+		}
 
-	console.log(target.x, 'place 1')
-
-	if( separation < radiusSum){
-		collidedCallback(target)
-	}
 }
 
 var collisionReset = function(target){
-	// console.log(target)
-	// console.log(target.attr('cx'), 'place 2')
-	// console.log(target.data())
-	var dataArray = target.data();
-	console.log(dataArray)
-	for(var i = 0; i < dataArray.length; i++){
-		console.log(dataArray[i]['x'], 'dataArray[i][x]')
-		console.log(target.x, "target.attr('cx')")
-		if(dataArray[i]['x'] == target.attr('cx')){
-			console.log(i, 'index')
-		}
+	updateBestScore();
+	game.score = 0;
+	updateScore();
+}
+
+
+
+
+var createTargets = function(){
+	var targets = [];
+	var data = [];
+	for(var i = 0; i < 30; i++){
+		data.push({'id': i, 'x':Math.random()*game.width, 'y':Math.random()*game.height})
 	}
-	//look through target array
-	// find object with matching cx attr
-	//delete it
-	//update data
-	// this.remove()
+	targets = renderTargets(data);
+	return targets
 }
 
 
-var data = [];
-var targets = [];
-for(var i = 0; i < 50; i++){
-	data.push(newDataPosition())
-	targets.push(updateTargets(data));
+var play = function(){
+	controlMaker(450, 300)
+	createTargets();
+	setInterval(createTargets, 1000)
+	setInterval(increaseScore, 50)
 }
 
-
-
-
-// setInterval(function(){
-// 	var target = gameBoard.selectAll('.target');
-// 	target.attr('cx', Math.random()*game.width);
-// 	target.attr('cy', Math.random()*game.height)
-// }, 1000)
-
-
+play()
 
 
 
